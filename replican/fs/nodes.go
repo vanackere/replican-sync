@@ -6,7 +6,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"path/filepath"
-	"container/vector"
 )
 
 // Block size used for checksum, comparison, transmitting deltas.
@@ -45,13 +44,16 @@ type FsNode interface {
 
 // Given a filesystem node, calculate the relative path string to it from the root node.
 func RelPath(item FsNode) string {
-	parts := vector.StringVector{}
+	var parts []string
 	
 	for fsNode := item; !fsNode.IsRoot(); fsNode = fsNode.Parent() {
-		parts.Insert(0, fsNode.Name())
+		parts = append(parts, fsNode.Name())
 	}
-	
-	return filepath.Join(parts...)
+	rev_parts := make([]string, len(parts))
+	for i,p := range(parts){
+		rev_parts[len(parts)-i-1] = p
+	}
+	return filepath.Join(rev_parts...)
 }
 
 // Represent a block in a hierarchical tree model.
