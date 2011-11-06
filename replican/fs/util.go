@@ -17,7 +17,7 @@ func SplitNames(path string) []string {
 // Move src to dst.
 // Try a rename. If that fails due to different filesystems,
 // try a copy/delete instead.
-func Move(src string, dst string) (err os.Error) {
+func Move(src string, dst string) (err error) {
 	if _, err = os.Stat(dst); err == nil {
 		os.Remove(dst)
 	}
@@ -28,7 +28,7 @@ func Move(src string, dst string) (err os.Error) {
 			return err
 		}
 
-		if causeErr, isErrno := linkErr.Error.(os.Errno); isErrno && causeErr == syscall.EXDEV {
+		if causeErr, isErrno := linkErr.Err.(os.Errno); isErrno && causeErr == syscall.EXDEV {
 			srcF, err := os.Open(src)
 			if err != nil {
 				return err

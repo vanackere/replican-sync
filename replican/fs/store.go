@@ -2,6 +2,7 @@ package fs
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,10 +20,10 @@ type BlockStore interface {
 	Index() *BlockIndex
 
 	// Given a strong checksum of a block, get the bytes for that block.
-	ReadBlock(strong string) ([]byte, os.Error)
+	ReadBlock(strong string) ([]byte, error)
 
 	// Given the strong checksum of a file, start and end positions, get those bytes.
-	ReadInto(strong string, from int64, length int64, writer io.Writer) (int64, os.Error)
+	ReadInto(strong string, from int64, length int64, writer io.Writer) (int64, error)
 }
 
 // A local file implementation of BlockStore
@@ -31,13 +32,13 @@ type LocalStore interface {
 
 	RelPath(fullpath string) (relpath string)
 
-	Relocate(fullpath string) (relocFullpath string, err os.Error)
+	Relocate(fullpath string) (relocFullpath string, err error)
 
 	Resolve(relpath string) string
 
 	RootPath() string
 
-	reindex() os.Error
+	reindex() error
 }
 
 type localBase struct {
@@ -56,7 +57,7 @@ type LocalFileStore struct {
 	file *File
 }
 
-func NewLocalStore(rootPath string) (local LocalStore, err os.Error) {
+func NewLocalStore(rootPath string) (local LocalStore, err error) {
 	rootInfo, err := os.Stat(rootPath)
 	if err != nil {
 		return nil, err
@@ -78,17 +79,17 @@ func NewLocalStore(rootPath string) (local LocalStore, err os.Error) {
 	return local, nil
 }
 
-func (store *LocalDirStore) reindex() (err os.Error) {
+func (store *LocalDirStore) reindex() (err error) {
 	store.dir = IndexDir(store.RootPath(), nil)
 	if store.dir == nil {
-		return os.NewError(fmt.Sprintf("Failed to reindex root: %s", store.RootPath()))
+		return errors.New(fmt.Sprintf("Failed to reindex root: %s", store.RootPath()))
 	}
 
 	store.index = IndexBlocks(store.dir)
 	return nil
 }
 
-func (store *LocalFileStore) reindex() (err os.Error) {
+func (store *LocalFileStore) reindex() (err error) {
 	store.file, err = IndexFile(store.RootPath())
 	if err != nil {
 		return err
@@ -106,7 +107,7 @@ func (store *localBase) RelPath(fullpath string) (relpath string) {
 
 const RELOC_PREFIX string = "_reloc"
 
-func (store *localBase) Relocate(fullpath string) (relocFullpath string, err os.Error) {
+func (store *localBase) Relocate(fullpath string) (relocFullpath string, err error) {
 	relocFh, err := ioutil.TempFile(store.RootPath(), RELOC_PREFIX)
 	if err != nil {
 		return "", err
@@ -152,10 +153,10 @@ func (store *LocalFileStore) Root() FsNode { return store.file }
 
 func (store *localBase) Index() *BlockIndex { return store.index }
 
-func (store *localBase) ReadBlock(strong string) ([]byte, os.Error) {
+func (store *localBase) ReadBlock(strong string) ([]byte, error) {
 	block, has := store.index.StrongBlock(strong)
 	if !has {
-		return nil, os.NewError(
+		return nil, errors.New(
 			fmt.Sprintf("Block with strong checksum %s not found", strong))
 	}
 
@@ -168,12 +169,12 @@ func (store *localBase) ReadBlock(strong string) ([]byte, os.Error) {
 	return buf.Bytes(), nil
 }
 
-func (store *localBase) ReadInto(strong string, from int64, length int64, writer io.Writer) (int64, os.Error) {
+func (store *localBase) ReadInto(strong string, from int64, length int64, writer io.Writer) (int64, error) {
 
 	file, has := store.index.StrongFile(strong)
 	if !has {
 		return 0,
-			os.NewError(fmt.Sprintf("File with strong checksum %s not found", strong))
+			errors.New(fmt.Sprintf("File with strong checksum %s not found", strong))
 	}
 
 	path := store.Resolve(RelPath(file))
@@ -188,7 +189,7 @@ func (store *localBase) ReadInto(strong string, from int64, length int64, writer
 		return 0, err
 	}
 
-	n, err := io.Copyn(writer, fh, length)
+	n, err := io.CopyN(writer, fh, length)
 	if err != nil {
 		return n, err
 	}

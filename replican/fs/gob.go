@@ -2,25 +2,25 @@ package fs
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"gob"
-	"os"
 	"reflect"
 )
 
 const gobNodeVersion int = 1
 
-func checkVersion(decoder *gob.Decoder) os.Error {
+func checkVersion(decoder *gob.Decoder) error {
 	var version int
 	decoder.DecodeValue(reflect.ValueOf(&version))
 	if version != gobNodeVersion {
-		return os.NewError(fmt.Sprintf("Version %d of node gobber cannot decode version %d",
+		return errors.New(fmt.Sprintf("Version %d of node gobber cannot decode version %d",
 			gobNodeVersion, version))
 	}
 	return nil
 }
 
-func (block *Block) GobDecode(buf []byte) (err os.Error) {
+func (block *Block) GobDecode(buf []byte) (err error) {
 	buffer := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(buffer)
 
@@ -45,7 +45,7 @@ func (block *Block) GobDecode(buf []byte) (err os.Error) {
 	return nil
 }
 
-func (file *File) GobDecode(buf []byte) (err os.Error) {
+func (file *File) GobDecode(buf []byte) (err error) {
 	buffer := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(buffer)
 
@@ -82,7 +82,7 @@ func (file *File) GobDecode(buf []byte) (err os.Error) {
 	return nil
 }
 
-func (dir *Dir) GobDecode(buf []byte) (err os.Error) {
+func (dir *Dir) GobDecode(buf []byte) (err error) {
 	buffer := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(buffer)
 
@@ -122,11 +122,11 @@ func (dir *Dir) GobDecode(buf []byte) (err os.Error) {
 	return nil
 }
 
-func (block *Block) GobEncode() ([]byte, os.Error) {
+func (block *Block) GobEncode() ([]byte, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	encoder := gob.NewEncoder(buffer)
 
-	var err os.Error
+	var err error
 	err = encoder.EncodeValue(reflect.ValueOf(gobNodeVersion))
 	if err != nil {
 		return nil, err
@@ -148,11 +148,11 @@ func (block *Block) GobEncode() ([]byte, os.Error) {
 	return buffer.Bytes(), nil
 }
 
-func (file *File) GobEncode() ([]byte, os.Error) {
+func (file *File) GobEncode() ([]byte, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	encoder := gob.NewEncoder(buffer)
 
-	var err os.Error
+	var err error
 	err = encoder.EncodeValue(reflect.ValueOf(gobNodeVersion))
 	if err != nil {
 		return nil, err
@@ -182,11 +182,11 @@ func (file *File) GobEncode() ([]byte, os.Error) {
 	return buffer.Bytes(), nil
 }
 
-func (dir *Dir) GobEncode() ([]byte, os.Error) {
+func (dir *Dir) GobEncode() ([]byte, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	encoder := gob.NewEncoder(buffer)
 
-	var err os.Error
+	var err error
 	err = encoder.EncodeValue(reflect.ValueOf(gobNodeVersion))
 	if err != nil {
 		return nil, err

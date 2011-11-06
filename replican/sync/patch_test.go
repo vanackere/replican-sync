@@ -2,11 +2,11 @@ package sync
 
 import (
 	"fmt"
+	"github.com/cmars/replican-sync/replican/fs"
+	"github.com/cmars/replican-sync/replican/treegen"
 	"io"
 	"os"
 	"path/filepath"
-	"github.com/cmars/replican-sync/replican/fs"
-	"github.com/cmars/replican-sync/replican/treegen"
 	"strings"
 	"testing"
 
@@ -171,7 +171,7 @@ func TestPatchFileAppend(t *testing.T) {
 	failedCmd, err := patchPlan.Exec()
 	assert.Tf(t, failedCmd == nil && err == nil, "%v: %v", failedCmd, err)
 
-	errorChan := make(chan os.Error)
+	errorChan := make(chan error)
 	go func() {
 		srcRoot := fs.IndexDir(srcpath, errorChan)
 		dstRoot := fs.IndexDir(dstpath, errorChan)
@@ -233,7 +233,7 @@ func TestPatchFileTruncate(t *testing.T) {
 	failedCmd, err := patchPlan.Exec()
 	assert.Tf(t, failedCmd == nil && err == nil, "%v: %v", failedCmd, err)
 
-	errorChan := make(chan os.Error)
+	errorChan := make(chan error)
 	go func() {
 		srcRoot := fs.IndexDir(srcpath, errorChan)
 		dstRoot := fs.IndexDir(dstpath, errorChan)
@@ -531,7 +531,7 @@ func TestPatchWeakCollision(t *testing.T) {
 	failedCmd, err := patchPlan.Exec()
 	assert.Tf(t, failedCmd == nil && err == nil, "%v: %v", failedCmd, err)
 
-	errorChan := make(chan os.Error)
+	errorChan := make(chan error)
 	go func() {
 		srcDir := fs.IndexDir(srcpath, errorChan)
 		dstDir := fs.IndexDir(dstpath, errorChan)
@@ -570,7 +570,7 @@ func TestPatchRenameScope(t *testing.T) {
 	failedCmd, err := patchPlan.Exec()
 	assert.Tf(t, failedCmd == nil && err == nil, "%v: %v", failedCmd, err)
 
-	errorChan := make(chan os.Error)
+	errorChan := make(chan error)
 	go func() {
 		srcDir := fs.IndexDir(srcpath, errorChan)
 		dstDir := fs.IndexDir(dstpath, errorChan)
@@ -664,7 +664,7 @@ func TestClean(t *testing.T) {
 	assert.Tf(t, failedCmd == nil, "%v", failedCmd)
 	assert.Tf(t, err == nil, "%v", err)
 
-	errors := make(chan os.Error)
+	errors := make(chan error)
 	go func() {
 		patchPlan.Clean(errors)
 		close(errors)
@@ -704,7 +704,7 @@ func TestSetModeNew(t *testing.T) {
 	assert.Tf(t, failedCmd == nil, "%v", failedCmd)
 	assert.Tf(t, err == nil, "%v", err)
 
-	errors := make(chan os.Error)
+	errors := make(chan error)
 	go func() {
 		patchPlan.Clean(errors)
 		close(errors)
@@ -713,7 +713,7 @@ func TestSetModeNew(t *testing.T) {
 		assert.Tf(t, err == nil, "%v", err)
 	}
 
-	errors = make(chan os.Error)
+	errors = make(chan error)
 	go func() {
 		patchPlan.SetMode(errors)
 		close(errors)
@@ -763,7 +763,7 @@ func TestSetModeOverwrite(t *testing.T) {
 	assert.Tf(t, failedCmd == nil, "%v %v", failedCmd, err)
 	assert.Tf(t, err == nil, "%v", err)
 
-	errors := make(chan os.Error)
+	errors := make(chan error)
 	go func() {
 		patchPlan.Clean(errors)
 		close(errors)
@@ -772,7 +772,7 @@ func TestSetModeOverwrite(t *testing.T) {
 		assert.Tf(t, err == nil, "%v", err)
 	}
 
-	errors = make(chan os.Error)
+	errors = make(chan error)
 	go func() {
 		patchPlan.SetMode(errors)
 		close(errors)
