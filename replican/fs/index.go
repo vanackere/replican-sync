@@ -2,6 +2,7 @@ package fs
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"hash"
 	"os"
@@ -45,7 +46,7 @@ func (weak *WeakChecksum) Roll(removedByte byte, newByte byte) {
 type indexVisitor struct {
 	root   *Dir
 	dirMap map[string]*Dir
-	errors chan<- os.Error
+	errors chan<- error
 }
 
 // Initialize the IndexDir visitor
@@ -54,7 +55,7 @@ func newVisitor(path string) *indexVisitor {
 	path = strings.TrimRight(path, "/\\")
 
 	visitor := new(indexVisitor)
-	visitor.errors = make(chan os.Error)
+	visitor.errors = make(chan error)
 	visitor.dirMap = make(map[string]*Dir)
 	if rootInfo, err := os.Stat(path); err == nil {
 		visitor.VisitDir(path, rootInfo)
@@ -101,7 +102,7 @@ func (visitor *indexVisitor) VisitFile(path string, f *os.FileInfo) {
 			file.parent.Files = append(file.parent.Files, file)
 			return
 		} else if visitor.errors != nil {
-			visitor.errors <- os.NewError("cannot locate parent directory")
+			visitor.errors <- errors.New("cannot locate parent directory")
 		}
 	}
 
@@ -111,13 +112,27 @@ func (visitor *indexVisitor) VisitFile(path string, f *os.FileInfo) {
 }
 
 // Build a hierarchical tree model representing a directory's contents
-func IndexDir(path string, errors chan<- os.Error) *Dir {
+func IndexDir(path string, errors chan<- error) *Dir {
 	control := make(chan bool)
 	visitor := newVisitor(path)
 	visitor.errors = errors
 
 	go func() {
-		filepath.Walk(path, visitor, errors)
+		filepath.Walk(path, func(path string, info *os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+
+			if info.IsDirectory() {
+				if !visitor.VisitDir(path, info) {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
+			visitor.VisitFile(path, info)
+			return nil
+		})
 		close(control)
 	}()
 	<-control
@@ -130,7 +145,7 @@ func IndexDir(path string, errors chan<- os.Error) *Dir {
 }
 
 // Build a hierarchical tree model representing a file's contents
-func IndexFile(path string) (file *File, err os.Error) {
+func IndexFile(path string) (file *File, err error) {
 	var f *os.File
 	var buf [BLOCKSIZE]byte
 
@@ -138,7 +153,7 @@ func IndexFile(path string) (file *File, err os.Error) {
 	if stat == nil {
 		return nil, err
 	} else if !stat.IsRegular() {
-		return nil, os.NewError(fmt.Sprintf("%s: not a regular file", path))
+		return nil, errors.New(fmt.Sprintf("%s: not a regular file", path))
 	}
 
 	f, err = os.Open(path)
@@ -275,7 +290,7 @@ func IndexBlocks(node Node) (index *BlockIndex) {
 	index.strongDirs = make(map[string]*Dir)
 
 	Walk(node, func(current Node) bool {
-		switch t := current.(type) {
+		switch current.(type) {
 		case *Block:
 			block := current.(*Block)
 			index.strongBlocks[current.Strong()] = block

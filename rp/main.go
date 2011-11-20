@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/cmars/replican-sync/replican/fs"
 	"github.com/cmars/replican-sync/replican/sync"
 	"os"
-	"fmt"
 
 	"optarg.googlecode.com/hg/optarg"
 )
@@ -51,7 +51,7 @@ func main() {
 	os.Exit(0)
 }
 
-func die(message string, err os.Error) {
+func die(message string, err error) {
 	fmt.Fprintf(os.Stderr, "%s: %v\n", message, err)
 	os.Exit(1)
 }

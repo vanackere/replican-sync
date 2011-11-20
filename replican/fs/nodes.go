@@ -178,9 +178,9 @@ func (dir *Dir) Resolve(relpath string) (fsNode FsNode, hasItem bool) {
 			return fsNode, true
 		}
 
-		switch t := fsNode.(type) {
+		switch v := fsNode.(type) {
 		case *Dir:
-			cwd = fsNode.(*Dir)
+			cwd = v
 		default:
 			return nil, false
 		}

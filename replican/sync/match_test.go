@@ -26,7 +26,7 @@ func TestMatchIdentity(t *testing.T) {
 
 	fileInfo, err := os.Stat(srcPath)
 	if fileInfo == nil {
-		t.Fatalf("Cannot stat file %s: ", err.String())
+		t.Fatalf("Cannot stat file %s: ", err.Error())
 	} else {
 		nExpectMatches := fileInfo.Size / int64(fs.BLOCKSIZE)
 		if fileInfo.Size%int64(fs.BLOCKSIZE) > 0 {

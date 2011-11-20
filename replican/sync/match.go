@@ -1,9 +1,10 @@
 package sync
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"github.com/cmars/replican-sync/replican/fs"
+	"os"
 )
 
 type BlockMatch struct {
@@ -26,7 +27,7 @@ func (r *RangePair) Size() int64 {
 	return r.To - r.From
 }
 
-func Match(src string, dst string) (match *FileMatch, err os.Error) {
+func Match(src string, dst string) (match *FileMatch, err error) {
 	var srcFile *fs.File
 	srcFile, err = fs.IndexFile(src)
 	if srcFile == nil {
@@ -37,7 +38,7 @@ func Match(src string, dst string) (match *FileMatch, err os.Error) {
 	return match, err
 }
 
-func MatchFile(srcFile *fs.File, dst string) (match *FileMatch, err os.Error) {
+func MatchFile(srcFile *fs.File, dst string) (match *FileMatch, err error) {
 	srcBlockIndex := fs.IndexBlocks(srcFile)
 
 	match, err = MatchIndex(srcBlockIndex, dst)
@@ -48,7 +49,7 @@ func MatchFile(srcFile *fs.File, dst string) (match *FileMatch, err os.Error) {
 	return match, err
 }
 
-func MatchIndex(srcBlockIndex *fs.BlockIndex, dst string) (match *FileMatch, err os.Error) {
+func MatchIndex(srcBlockIndex *fs.BlockIndex, dst string) (match *FileMatch, err error) {
 	match = new(FileMatch)
 	var dstOffset int64
 
@@ -61,7 +62,7 @@ func MatchIndex(srcBlockIndex *fs.BlockIndex, dst string) (match *FileMatch, err
 	if dstInfo, err := dstF.Stat(); dstInfo == nil {
 		return nil, err
 	} else if !dstInfo.IsRegular() {
-		return nil, os.NewError(fmt.Sprintf("%s: not a regular file", dst))
+		return nil, errors.New(fmt.Sprintf("%s: not a regular file", dst))
 	} else {
 		match.DstSize = dstInfo.Size
 	}
@@ -123,7 +124,7 @@ SCAN:
 					break
 
 				case srd > 1:
-					return nil, os.NewError("Internal read error trying advance one byte.")
+					return nil, errors.New("Internal read error trying advance one byte.")
 				}
 			}
 		}

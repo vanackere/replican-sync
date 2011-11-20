@@ -2,10 +2,10 @@ package fs
 
 import (
 	"bytes"
-	"gob"
+	"encoding/gob"
+	"github.com/cmars/replican-sync/replican/treegen"
 	"os"
 	"path/filepath"
-	"github.com/cmars/replican-sync/replican/treegen"
 	"strings"
 	"testing"
 
@@ -14,14 +14,14 @@ import (
 
 func testIndexSomeMp3(t *testing.T) {
 	var f *File
-	var err os.Error
+	var err error
 
 	cwd, _ := os.Getwd()
 	t.Logf("CWD=%s", cwd)
 
 	f, err = IndexFile("../../testroot/My Music/0 10k 30.mp4")
 	if f == nil {
-		t.Fatalf("Failed to index file: %s", err.String())
+		t.Fatalf("Failed to index file: %s", err.Error())
 	}
 
 	assert.Equal(t, "5ab3e5d621402e5894429b5f595a1e2d7e1b3078", f.Strong())
